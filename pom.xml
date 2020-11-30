@@ -3,22 +3,15 @@
   <groupId>com.github.ardlema.alerts</groupId>
   <artifactId>maritime-surveillance</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>${project.artifactId}</name>
-  <description>My wonderfull scala app</description>
-  <inceptionYear>2018</inceptionYear>
-  <licenses>
-    <license>
-      <name>My License</name>
-      <url>http://....</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
+  <name>maritime-surveillance</name>
+  <description>Kafka streams app that automatically detects smuggling scenarios</description>
+  <inceptionYear>2020</inceptionYear>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <encoding>UTF-8</encoding>
-    <scala.version>2.12.6</scala.version>
+    <scala.version>2.12.8</scala.version>
     <scala.compat.version>2.12</scala.compat.version>
     <spec2.version>4.2.0</spec2.version>
   </properties>
