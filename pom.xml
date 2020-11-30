@@ -13,7 +13,7 @@
     <encoding>UTF-8</encoding>
     <scala.version>2.12.8</scala.version>
     <scala.compat.version>2.12</scala.compat.version>
-    <spec2.version>4.2.0</spec2.version>
+    <slf4j.version>1.7.25</slf4j.version>
   </properties>
 
   <dependencies>
@@ -21,6 +21,18 @@
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
+    </dependency>
+
+    <!-- Logging deps -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j.version}</version>
     </dependency>
 
     <!-- Test -->
