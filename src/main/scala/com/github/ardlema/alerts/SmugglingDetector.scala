@@ -1,9 +1,19 @@
 package com.github.ardlema.alerts
 
-import java.util.Properties
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+import java.nio.file.{Files, Paths}
+import java.util.{Collections, Properties}
 
 import com.github.ardlema.alerts.config.{KafkaConfig, KafkaStreamsConfig}
-import org.apache.kafka.streams.{KafkaStreams, StreamsBuilder}
+import com.github.ardlema.alerts.model.avro.SerializableImage
+import com.github.fbascheper.kafka.connect.telegram.TgMessage
+import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+import mapper.telegram.TelegramMessageMapper
+import org.apache.kafka.streams.KafkaStreams
+import org.apache.kafka.streams.scala.kstream.{Consumed, KStream, Produced}
+import org.apache.kafka.streams.scala.{Serdes, StreamsBuilder}
 import org.apache.log4j.Logger
 
 import scala.util.control.NonFatal
@@ -25,7 +35,7 @@ object SmugglingDetector {
       KafkaConfig.KafkaSchemaRegistryUrl);
 
     val streams = createStreams(
-      streamsConfiguration);
+      streamsConfiguration)
 
     streams.cleanUp();
     // start processing
@@ -43,6 +53,63 @@ object SmugglingDetector {
 
   def createStreams(streamsConfiguration: Properties): KafkaStreams = {
     val builder = new StreamsBuilder()
+
+    // Create TensorFlow object
+
+    val modelDir = "src/main/resources/model/tensorflow"
+
+    val pathGraph = Paths.get(modelDir, "tensorflow_inception_graph.pb")
+    val graphDefinition = Files.readAllBytes(pathGraph)
+
+    val pathModel = Paths.get(modelDir, "imagenet_comp_graph_label_strings.txt")
+    val labels = Files.readAllLines(pathModel, Charset.forName("UTF-8"))
+
+    val serdeConfig =
+      Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, KafkaConfig.KafkaSchemaRegistryUrl)
+    val telegramMessageSerde = new SpecificAvroSerde[TgMessage]()
+    telegramMessageSerde.configure(serdeConfig, false)
+
+    // In the subsequent lines we define the processing topology of the
+    // Streams application.
+    // Construct a `KStream` from the input topic "ImageInputTopic", where
+    // message values represent lines of text
+    val imageInputLines = builder.stream(ImageInputTopic)(Consumed.`with`(Serdes.String, Serdes.String))
+
+    //imageInputLines.print(Printed.toSysOut());
+
+
+    // Stream Processor (in this case inside mapValues to add custom logic, i.e. apply the
+    // analytic model)
+    val telegramPhotoMessage: KStream[String, TgMessage] = imageInputLines.mapValues(file => {
+      val imageFile = file
+      val pathImage = Paths.get(imageFile)
+      val imageBytes = Files.readAllBytes(pathImage)
+      val image = GraphConstructor.constructAndExecuteGraphToNormalizeImage(imageBytes)
+      val labelProbabilities = GraphConstructor.executeInceptionGraph(graphDefinition, image)
+      val bestLabelIdx = GraphConstructor.maxIndex(labelProbabilities)
+      val imageClassification = labels.get(bestLabelIdx)
+      val probability = labelProbabilities(bestLabelIdx) * 100F
+      val imageProbability = probability.toString
+      println(s"Best match: $imageClassification ($imageProbability% likely)")
+      //return "Prediction: What is the content of this picture? => " + imageClassification
+      //		+ ", probability = " + imageProbability;
+      val caption = imageClassification.toString()
+      val serImage = new SerializableImage("SpeedBoat", ByteBuffer.wrap(imageBytes))
+      TelegramMessageMapper.photoMessage(serImage, caption)
+    })
+
+    /*KStream<String, TgMessage> telegramPhotoMessage = burglarAlertStream
+        .mapValues((readOnlyKey, imageClassification) -> {
+          String caption = imageClassification.toString();
+
+          LOGGER.debug(">>> Sending telegram message with caption {}", caption);
+          return TelegramMessageMapper.photoMessage(imageClassification.getImage(), caption);
+        });*/
+
+    // Send the alerts to telegram topic (sink)
+    telegramPhotoMessage.to(AlertsOutputTopic)(Produced.`with`(Serdes.String, telegramMessageSerde))
+
+
     new KafkaStreams(builder.build(), streamsConfiguration)
   }
 

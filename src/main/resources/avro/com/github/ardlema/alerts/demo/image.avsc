@@ -1,0 +1,17 @@
+[
+  {
+    "namespace": "com.github.ardlema.alerts.model.avro",
+    "type": "record",
+    "name": "SerializableImage",
+    "fields": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "imageData",
+        "type": "bytes"
+      }
+    ]
+  }
+]
