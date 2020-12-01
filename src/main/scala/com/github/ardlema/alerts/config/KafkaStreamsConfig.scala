@@ -1,5 +1,6 @@
 package com.github.ardlema.alerts.config
 
+import java.lang
 import java.util.Properties
 import java.util.concurrent.TimeUnit
 
@@ -29,7 +30,6 @@ object KafkaStreamsConfig {
 
     // Set to earliest so we don't miss any data that arrived in the topics before the process started
     streamsConfiguration.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-    streamsConfiguration.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, TimeUnit.SECONDS.toMillis(30))
 
     // Specify default (de)serializers for record keys and for record values.
     streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName())

@@ -1,8 +1,5 @@
 package com.github.ardlema.alerts
 
-import collection.mutable.Stack
-import org.scalatest._
-
 import org.scalatest.funsuite.AnyFunSuite
 
 class GraphConstructorSpec extends AnyFunSuite  {
