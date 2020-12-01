@@ -34,14 +34,16 @@ object SmugglingDetector {
       KafkaConfig.KafkaBootstrapServers,
       KafkaConfig.KafkaSchemaRegistryUrl);
 
-    val streams = createStreams(
-      streamsConfiguration)
+    val streams = createStreams(streamsConfiguration)
 
     streams.cleanUp();
     // start processing
     streams.start();
-    // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
 
+    println("Smuggling detector stream microservice is running...");
+    System.out.println("Getting events from the input Kafka Topic: " + ImageInputTopic + ". Sending alerts to the following Kafka Topic: " + AlertsOutputTopic);
+
+    // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
     sys.addShutdownHook {
       try {
         streams.close()
@@ -57,35 +59,23 @@ object SmugglingDetector {
     // Create TensorFlow object
 
     val modelDir = "src/main/resources/model/tensorflow"
-
     val pathGraph = Paths.get(modelDir, "tensorflow_inception_graph.pb")
     val graphDefinition = Files.readAllBytes(pathGraph)
-
     val pathModel = Paths.get(modelDir, "imagenet_comp_graph_label_strings.txt")
     val labels = Files.readAllLines(pathModel, Charset.forName("UTF-8"))
-
     val serdeConfig =
       Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, KafkaConfig.KafkaSchemaRegistryUrl)
     val telegramMessageSerde = new SpecificAvroSerde[TgMessage]()
     telegramMessageSerde.configure(serdeConfig, false)
-
-    // In the subsequent lines we define the processing topology of the
-    // Streams application.
-    // Construct a `KStream` from the input topic "ImageInputTopic", where
-    // message values represent lines of text
+    // In the subsequent lines we define the processing topology of the streams application
     val imageInputLines = builder.stream(ImageInputTopic)(Consumed.`with`(Serdes.String, Serdes.String))
-
-    //imageInputLines.print(Printed.toSysOut());
-
-
-    // Stream Processor (in this case inside mapValues to add custom logic, i.e. apply the
-    // analytic model)
     val telegramPhotoMessage: KStream[String, TgMessage] = imageInputLines.mapValues(file => {
       val imageFile = file
       val pathImage = Paths.get(imageFile)
       val imageBytes = Files.readAllBytes(pathImage)
       val image = GraphConstructor.constructAndExecuteGraphToNormalizeImage(imageBytes)
       val labelProbabilities = GraphConstructor.executeInceptionGraph(graphDefinition, image)
+
       val bestLabelIdx = GraphConstructor.maxIndex(labelProbabilities)
       val imageClassification = labels.get(bestLabelIdx)
       val probability = labelProbabilities(bestLabelIdx) * 100F
@@ -98,17 +88,8 @@ object SmugglingDetector {
       TelegramMessageMapper.photoMessage(serImage, caption)
     })
 
-    /*KStream<String, TgMessage> telegramPhotoMessage = burglarAlertStream
-        .mapValues((readOnlyKey, imageClassification) -> {
-          String caption = imageClassification.toString();
-
-          LOGGER.debug(">>> Sending telegram message with caption {}", caption);
-          return TelegramMessageMapper.photoMessage(imageClassification.getImage(), caption);
-        });*/
-
     // Send the alerts to telegram topic (sink)
     telegramPhotoMessage.to(AlertsOutputTopic)(Produced.`with`(Serdes.String, telegramMessageSerde))
-
 
     new KafkaStreams(builder.build(), streamsConfiguration)
   }

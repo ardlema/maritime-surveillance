@@ -21,8 +21,8 @@ object GraphConstructor {
     // float using (value - Mean)/Scale.
     val height = 224
     val weight = 224
-    val mean = 117f
-    val scale = 1f
+    val mean = 117F
+    val scale = 1F
 
     // Since the graph is being constructed once per execution here, we
     // can use a constant for the
@@ -30,12 +30,14 @@ object GraphConstructor {
     // images, a placeholder would
     // have been more appropriate.
     val input: Output = graphBuilder.constant("input", imageBytes)
+    val constantArray = List(height, weight).toArray
     val output: Output = graphBuilder
       .div(graphBuilder.sub(
         graphBuilder.resizeBilinear(graphBuilder.expandDims(graphBuilder.cast(graphBuilder.decodeJpeg(input, 3), DataType.FLOAT),
-          graphBuilder.constant("make_batch", 0)), graphBuilder.constant("size", Array[java.lang.Integer](height, weight))),
+          graphBuilder.constant("make_batch", 0)), graphBuilder.constant("size", constantArray)),
         graphBuilder.constant("mean", mean)), graphBuilder.constant("scale", scale))
     val session = new Session(graph)
+    //TODO: Add exception handler
     session.runner().fetch(output.op().name()).run().get(0)
   }
 
@@ -56,9 +58,20 @@ object GraphConstructor {
         "Expected model to produce a [1 N] shaped tensor where N is the number of labels, instead it produced one with shape %s",
         rshape.toString))
     }
-    val nlabels = rshape(1)
+
+    /*int nlabels = (int) rshape[1];
+    float[][] array = result.copyTo(new float[1][nlabels]);
+    return array[0];*/
+
+
+
+    val nlabels = rshape(1).toInt
+
+
+
     //TODO: REVIEW TIS!!!
-    val arrayResult: Array[Array[Float]] = result.copyTo(Array(Array(1, nlabels)))
+    val arrayCopied = Array.ofDim[Float](1, nlabels)
+    val arrayResult = result.copyTo(arrayCopied)
     arrayResult(0)
   }
 
@@ -67,7 +80,7 @@ object GraphConstructor {
   }
 
   def maxIndex(probabilities: Array[Float]): Integer = {
-    probabilities.indices.max
+    probabilities.indexOf(probabilities.max)
   }
 }
 
