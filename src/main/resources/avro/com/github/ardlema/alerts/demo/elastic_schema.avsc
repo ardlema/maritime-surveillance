@@ -1,0 +1,29 @@
+[
+  {
+    "namespace": "com.github.ardlema.alerts.model.avro",
+    "type": "record",
+    "name": "ElasticsearchMessage",
+    "fields": [
+      {
+        "name": "locationname",
+        "type": "string"
+      },
+      {
+        "name": "latitudelongitude",
+        "type": "string"
+      },
+      {
+        "name": "timestamp",
+        "type": "string"
+      },
+      {
+        "name": "predictionlabel",
+        "type": "string"
+      },
+      {
+        "name": "probability",
+        "type": "float"
+      }
+    ]
+  }
+]

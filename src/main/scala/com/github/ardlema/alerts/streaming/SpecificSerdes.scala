@@ -3,6 +3,7 @@ package com.github.ardlema.alerts.streaming
 import java.util.Collections
 
 import com.github.ardlema.alerts.config.KafkaConfig
+import com.github.ardlema.alerts.model.avro.ElasticsearchMessage
 import com.github.ardlema.alerts.tensorflow.ValuePredictionImageBytes
 import com.github.fbascheper.kafka.connect.telegram.TgMessage
 import com.github.jcustenborder.kafka.connect.model.Value
@@ -13,8 +14,11 @@ trait SpecificSerdes {
 
   val serdeConfig =
     Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, KafkaConfig.KafkaSchemaRegistryUrl)
-  val telegramMessageSerde: SpecificAvroSerde[TgMessage] = new SpecificAvroSerde[TgMessage]()
   val inputImageSerde: SpecificAvroSerde[Value] = new SpecificAvroSerde[Value]()
-  telegramMessageSerde.configure(serdeConfig, false)
+  val telegramMessageSerde: SpecificAvroSerde[TgMessage] = new SpecificAvroSerde[TgMessage]()
+  val elasticsearchMessageSerde: SpecificAvroSerde[ElasticsearchMessage] = new SpecificAvroSerde[ElasticsearchMessage]()
   inputImageSerde.configure(serdeConfig, false)
+  telegramMessageSerde.configure(serdeConfig, false)
+  elasticsearchMessageSerde.configure(serdeConfig, false)
+
 }

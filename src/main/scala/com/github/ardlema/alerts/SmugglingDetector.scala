@@ -12,7 +12,8 @@ object SmugglingDetector {
 
   val ImageInputTopic = KafkaConfig.ImageInputTopic
   val AlertsOutputTopic = KafkaConfig.AlertsOutputTopic
-  
+  val ElasticSearchOutputTopic = KafkaConfig.ElasticsearchOutputTopic
+
   def main(args : Array[String]) {
     val streamsConfiguration = KafkaStreamsConfig.buildStreamsConfiguration(
       "tensorflow-smuggling-detector", " /tmp",

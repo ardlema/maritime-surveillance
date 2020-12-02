@@ -1,9 +1,11 @@
 package com.github.ardlema.alerts.streaming
 
 import java.nio.file.{Files, Paths}
-import java.util.{Properties}
+import java.util.Properties
 
-import com.github.ardlema.alerts.SmugglingDetector.{AlertsOutputTopic, ImageInputTopic}
+import com.github.ardlema.alerts.SmugglingDetector.{AlertsOutputTopic, ImageInputTopic, ElasticSearchOutputTopic}
+import com.github.ardlema.alerts.elasticsearch.ElasticsearchMessageBuilder
+import com.github.ardlema.alerts.model.avro.ElasticsearchMessage
 import com.github.ardlema.alerts.tensorflow.{ImageClassifier, ValuePredictionImageBytes}
 import com.github.fbascheper.kafka.connect.telegram.TgMessage
 import com.github.jcustenborder.kafka.connect.model.Value
@@ -20,7 +22,10 @@ object SmugglingDetectorStreamsBuilder extends SpecificSerdes {
 
     // In the subsequent lines we define the processing topology of the streams application
     val imageInputStream = builder.stream(ImageInputTopic)(Consumed.`with`(Serdes.String, inputImageSerde))
-    val predictionStream = imageInputStream.mapValues(fileInformation => {
+
+    val inputStreamWithoutInvalidImages = imageInputStream.filter((_, value) => Files.exists(Paths.get(value.getSourceFile)))
+
+    val predictionStream: KStream[String, ValuePredictionImageBytes] = inputStreamWithoutInvalidImages.mapValues(fileInformation => {
       val imageBytes = getImageBytesFromSourceFile(fileInformation)
       val prediction = ImageClassifier.classifyImage(imageBytes)
       println(s"Best match: ${prediction.label} (${prediction.probability}% likely)")
@@ -36,10 +41,15 @@ object SmugglingDetectorStreamsBuilder extends SpecificSerdes {
       TelegramMessage.createMessageFromValuePrediction(valuePredictionImageBytes)
     })
 
+    val elasticSearchStream: KStream[String, ElasticsearchMessage] = detectionStreams(1).mapValues(valuePredictionImageBytes => {
+      ElasticsearchMessageBuilder.createMessageFromValuePrediction(valuePredictionImageBytes)
+    })
+
     // Send the alerts to telegram topic (sink)
     telegramAlertsStream.to(AlertsOutputTopic)(Produced.`with`(Serdes.String, telegramMessageSerde))
 
     //Send the non suspicious elements to Elasticsearch to be tracked
+    elasticSearchStream.to(ElasticSearchOutputTopic)(Produced.`with`(Serdes.String, elasticsearchMessageSerde))
 
     new KafkaStreams(builder.build(), streamsConfiguration)
   }
