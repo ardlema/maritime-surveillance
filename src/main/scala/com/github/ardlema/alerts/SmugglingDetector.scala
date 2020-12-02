@@ -95,8 +95,8 @@ object SmugglingDetector {
 
   def telegramMessageCaption(imageType: String, fileInfo: Value) = {
     val time = fileInfo.getTimestamp
-    val cameraId = fileInfo.getCameraId
-    s"""This $imageType has been detected by the camera located at $cameraId at $time"""
+    val cameraLocation = fileInfo.getLocation
+    s"""This $imageType has been detected by the camera installed in $cameraLocation at $time"""
   }
 
 }
