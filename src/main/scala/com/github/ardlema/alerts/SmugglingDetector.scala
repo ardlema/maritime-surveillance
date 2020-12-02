@@ -72,8 +72,8 @@ object SmugglingDetector {
     inputImageSerde.configure(serdeConfig, false)
     // In the subsequent lines we define the processing topology of the streams application
     val imageInputLines = builder.stream(ImageInputTopic)(Consumed.`with`(Serdes.String, inputImageSerde))
-    val telegramPhotoMessage: KStream[String, TgMessage] = imageInputLines.mapValues(file => {
-      val imageFile = file.getSourceFile
+    val telegramPhotoMessage: KStream[String, TgMessage] = imageInputLines.mapValues(fileInformation => {
+      val imageFile = fileInformation.getSourceFile
       val pathImage = Paths.get(imageFile)
       val imageBytes = Files.readAllBytes(pathImage)
       val image = GraphConstructor.constructAndExecuteGraphToNormalizeImage(imageBytes)
@@ -83,17 +83,20 @@ object SmugglingDetector {
       val probability = labelProbabilities(bestLabelIdx) * 100F
       val imageProbability = probability.toString
       println(s"Best match: $imageClassification ($imageProbability% likely)")
-      //return "Prediction: What is the content of this picture? => " + imageClassification
-      //		+ ", probability = " + imageProbability;
-      val caption = imageClassification.toString()
-      val serImage = new SerializableImage("SpeedBoat", ByteBuffer.wrap(imageBytes))
-      TelegramMessageMapper.photoMessage(serImage, caption)
+      val serImage = new SerializableImage(imageClassification.toString, ByteBuffer.wrap(imageBytes))
+      TelegramMessageMapper.photoMessage(serImage, telegramMessageCaption(imageClassification, fileInformation))
     })
 
     // Send the alerts to telegram topic (sink)
     telegramPhotoMessage.to(AlertsOutputTopic)(Produced.`with`(Serdes.String, telegramMessageSerde))
 
     new KafkaStreams(builder.build(), streamsConfiguration)
+  }
+
+  def telegramMessageCaption(imageType: String, fileInfo: Value) = {
+    val time = fileInfo.getTimestamp
+    val cameraId = fileInfo.getCameraId
+    s"""This $imageType has been detected by the camera located at $cameraId at $time"""
   }
 
 }
