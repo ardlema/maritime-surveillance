@@ -1,5 +1,6 @@
 package com.github.ardlema.alerts
 
+import com.github.ardlema.alerts.tensorflow.GraphConstructor
 import org.scalatest.funsuite.AnyFunSuite
 
 class GraphConstructorSpec extends AnyFunSuite  {

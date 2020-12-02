@@ -1,4 +1,4 @@
-package mapper.telegram
+package com.github.ardlema.alerts.telegram
 
 import com.github.ardlema.alerts.model.avro.SerializableImage
 import com.github.fbascheper.kafka.connect.telegram.{TgAttachment, TgMessage, TgMessageType, TgPhotoMessage}

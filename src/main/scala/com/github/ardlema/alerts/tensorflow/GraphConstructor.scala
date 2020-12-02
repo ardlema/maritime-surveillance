@@ -1,6 +1,6 @@
-package com.github.ardlema.alerts
+package com.github.ardlema.alerts.tensorflow
 
-import org.tensorflow.{DataType, Graph, Output, Session, Tensor}
+import org.tensorflow._
 
 
 object GraphConstructor {
