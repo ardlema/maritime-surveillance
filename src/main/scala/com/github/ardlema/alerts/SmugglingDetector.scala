@@ -1,7 +1,7 @@
 package com.github.ardlema.alerts
 
 import com.github.ardlema.alerts.config.{KafkaConfig, KafkaStreamsConfig}
-import com.github.ardlema.alerts.streaming.StreamsBuilder
+import com.github.ardlema.alerts.streaming.SmugglingDetectorStreamsBuilder
 import org.apache.log4j.Logger
 
 import scala.util.control.NonFatal
@@ -19,7 +19,7 @@ object SmugglingDetector {
       KafkaConfig.KafkaBootstrapServers,
       KafkaConfig.KafkaSchemaRegistryUrl);
 
-    val streams = StreamsBuilder.createStreams(streamsConfiguration)
+    val streams = SmugglingDetectorStreamsBuilder.createStreams(streamsConfiguration)
 
     streams.cleanUp();
     streams.start();

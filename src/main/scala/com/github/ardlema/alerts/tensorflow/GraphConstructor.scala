@@ -1,7 +1,6 @@
 package com.github.ardlema.alerts.tensorflow
 
-import org.tensorflow._
-
+import org.tensorflow.{DataType, Graph, Output, Session, Tensor}
 
 object GraphConstructor {
 
@@ -75,37 +74,37 @@ object GraphConstructor {
 */
 case class GraphBuilder(graph: Graph) {
 
-    def div(x: Output, y: Output): Output = {
-      binaryOp("Div", x, y)
-    }
+  def div(x: Output, y: Output): Output = {
+    binaryOp("Div", x, y)
+  }
 
-    def sub(x: Output, y: Output): Output = {
-      binaryOp("Sub", x, y)
-    }
+  def sub(x: Output, y: Output): Output = {
+    binaryOp("Sub", x, y)
+  }
 
-    def resizeBilinear(images: Output, size: Output): Output =  {
-      binaryOp("ResizeBilinear", images, size)
-    }
+  def resizeBilinear(images: Output, size: Output): Output =  {
+    binaryOp("ResizeBilinear", images, size)
+  }
 
-    def expandDims(input: Output, dim: Output): Output =  {
-      binaryOp("ExpandDims", input, dim)
-    }
+  def expandDims(input: Output, dim: Output): Output =  {
+    binaryOp("ExpandDims", input, dim)
+  }
 
-    def cast(value: Output, dtype: DataType): Output = {
-      graph.opBuilder("Cast", "Cast").addInput(value).setAttr("DstT", dtype).build().output(0)
-    }
+  def cast(value: Output, dtype: DataType): Output = {
+    graph.opBuilder("Cast", "Cast").addInput(value).setAttr("DstT", dtype).build().output(0)
+  }
 
-    def decodeJpeg(contents: Output, channels: Long): Output =  {
-      graph.opBuilder("DecodeJpeg", "DecodeJpeg").addInput(contents).setAttr("channels", channels).build()
-        .output(0)
-    }
+  def decodeJpeg(contents: Output, channels: Long): Output =  {
+    graph.opBuilder("DecodeJpeg", "DecodeJpeg").addInput(contents).setAttr("channels", channels).build()
+      .output(0)
+  }
 
-    def constant(name: String, value: Any): Output = {
-      val t = Tensor.create(value)
-      graph.opBuilder("Const", name).setAttr("dtype", t.dataType()).setAttr("value", t).build().output(0)
-    }
+  def constant(name: String, value: Any): Output = {
+    val t = Tensor.create(value)
+    graph.opBuilder("Const", name).setAttr("dtype", t.dataType()).setAttr("value", t).build().output(0)
+  }
 
-    def binaryOp(theType: String, in1: Output, in2: Output): Output = {
-      graph.opBuilder(theType, theType).addInput(in1).addInput(in2).build().output(0)
-    }
+  def binaryOp(theType: String, in1: Output, in2: Output): Output = {
+    graph.opBuilder(theType, theType).addInput(in1).addInput(in2).build().output(0)
+  }
 }
