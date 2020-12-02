@@ -75,7 +75,6 @@ object SmugglingDetector {
       val imageBytes = Files.readAllBytes(pathImage)
       val image = GraphConstructor.constructAndExecuteGraphToNormalizeImage(imageBytes)
       val labelProbabilities = GraphConstructor.executeInceptionGraph(graphDefinition, image)
-
       val bestLabelIdx = GraphConstructor.maxIndex(labelProbabilities)
       val imageClassification = labels.get(bestLabelIdx)
       val probability = labelProbabilities(bestLabelIdx) * 100F
