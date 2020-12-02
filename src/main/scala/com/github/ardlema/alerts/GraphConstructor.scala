@@ -58,26 +58,12 @@ object GraphConstructor {
         "Expected model to produce a [1 N] shaped tensor where N is the number of labels, instead it produced one with shape %s",
         rshape.toString))
     }
-
-    /*int nlabels = (int) rshape[1];
-    float[][] array = result.copyTo(new float[1][nlabels]);
-    return array[0];*/
-
-
-
     val nlabels = rshape(1).toInt
-
-
-
-    //TODO: REVIEW TIS!!!
     val arrayCopied = Array.ofDim[Float](1, nlabels)
     val arrayResult = result.copyTo(arrayCopied)
     arrayResult(0)
   }
 
-  def testDummy(probabilities: Array[Float]): Integer = {
-    1
-  }
 
   def maxIndex(probabilities: Array[Float]): Integer = {
     probabilities.indexOf(probabilities.max)
