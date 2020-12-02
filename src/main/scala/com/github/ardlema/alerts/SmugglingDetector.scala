@@ -6,8 +6,9 @@ import java.nio.file.{Files, Paths}
 import java.util.{Collections, Properties}
 
 import com.github.ardlema.alerts.config.{KafkaConfig, KafkaStreamsConfig}
-import com.github.ardlema.alerts.model.avro.SerializableImage
+import com.github.ardlema.alerts.model.avro.{InputImage, SerializableImage}
 import com.github.fbascheper.kafka.connect.telegram.TgMessage
+import com.github.jcustenborder.kafka.connect.model.Value
 import io.confluent.kafka.serializers.AbstractKafkaAvroSerDeConfig
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 import mapper.telegram.TelegramMessageMapper
@@ -66,11 +67,13 @@ object SmugglingDetector {
     val serdeConfig =
       Collections.singletonMap(AbstractKafkaAvroSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG, KafkaConfig.KafkaSchemaRegistryUrl)
     val telegramMessageSerde = new SpecificAvroSerde[TgMessage]()
+    val inputImageSerde = new SpecificAvroSerde[Value]()
     telegramMessageSerde.configure(serdeConfig, false)
+    inputImageSerde.configure(serdeConfig, false)
     // In the subsequent lines we define the processing topology of the streams application
-    val imageInputLines = builder.stream(ImageInputTopic)(Consumed.`with`(Serdes.String, Serdes.String))
+    val imageInputLines = builder.stream(ImageInputTopic)(Consumed.`with`(Serdes.String, inputImageSerde))
     val telegramPhotoMessage: KStream[String, TgMessage] = imageInputLines.mapValues(file => {
-      val imageFile = file
+      val imageFile = file.getSourceFile
       val pathImage = Paths.get(imageFile)
       val imageBytes = Files.readAllBytes(pathImage)
       val image = GraphConstructor.constructAndExecuteGraphToNormalizeImage(imageBytes)
