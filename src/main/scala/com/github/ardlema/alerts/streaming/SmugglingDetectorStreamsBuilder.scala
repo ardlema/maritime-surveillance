@@ -27,8 +27,9 @@ object SmugglingDetectorStreamsBuilder extends SpecificSerdes {
 
     val predictionStream: KStream[String, ValuePredictionImageBytes] = inputStreamWithoutInvalidImages.mapValues(fileInformation => {
       val imageBytes = getImageBytesFromSourceFile(fileInformation)
+      println(s"About to predict image for: ${fileInformation.getSourceFile}")
       val prediction = ImageClassifier.classifyImage(imageBytes)
-      println(s"Best match: ${prediction.label} (${prediction.probability}% likely)")
+      println(s"Best match for ${fileInformation.getSourceFile}: ${prediction.label} (${prediction.probability}% likely)")
       ValuePredictionImageBytes(fileInformation, prediction, imageBytes)
     })
 
