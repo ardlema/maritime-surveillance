@@ -6,6 +6,7 @@ We are using the Tensorflow image classifier algorithm from the [Machine Learnin
 
 # Architectural overview
 
+![Architecture](docs/architecture.png)
 
 # Requirements, Installation and Usage
 
