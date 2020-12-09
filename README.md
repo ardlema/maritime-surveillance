@@ -99,6 +99,7 @@ to do so can be found in the following github repo: [Github repo Kafka connect T
 
 See following the json body of the POST request you have to send to the Kafka connect REST API to create the connector:
 
+```
 {
     "name": "telegram-sink-connector",
     "config": {
@@ -113,7 +114,7 @@ See following the json body of the POST request you have to send to the Kafka co
 		"telegram.bot.destination.chat.id": <CHAT_ID>
     }
 }
-
+```
 
 ### Elasticsearch sink connector
 
