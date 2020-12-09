@@ -34,6 +34,9 @@ using the following command (included within the bin folder):
 ```
 ./confluent start
 ```
+
+**_Important_**: Before setting up the connectors and start up the Kafka streams application we strongly recommend to create the topics beforehand. Check out the
+KafkaConfig file of the project to find out the topics names that must to be created.
  
 ## Connectors set-up
 
@@ -61,7 +64,7 @@ After downloading the zip file you must create a new directory (call it kafka-co
 within the directory you have just created and move the jar files that you will find within the lib directoy into the kafka-connect-spooldir, restart the confluent platform and that's it.
 
 Once you have installed the Spooldir source connector, you can both use the Confluent Control Center interface to create the connector (it should be running on http://localhost:9021/) or use the
-Kafka connect REST API to create it. See following the body of the POST request that should be used to create the connector:
+Kafka connect REST API (by default it will be running on http://localhost:8083) to create it. See following the body of the POST request that should be used to create the connector:
 
 ```
 {
@@ -87,7 +90,84 @@ move the files that contain any errors.
 
 ### Telegram sink connector
 
+The alerts for the events that might be considered as potential smugglers will be sent to a Telegram group chat. The Telegram sink connector
+is not included within the Confluent distribution so we need to download the zip file from here: [Kafka connect Telegram](https://www.confluent.io/hub/fbascheper/kafka-connect-telegram) . To install the connector please follow the same steps we explained above for the 
+Spooldir source connector.
+
+The Telegram connector needs a bot to communicate with. Currently you must use and create your own bot, using Telegram's BotFather. Detailed instructions
+to do so can be found in the following github repo: [Github repo Kafka connect Telegram](https://github.com/fbascheper/kafka-connect-telegram)
+
+See following the json body of the POST request you have to send to the Kafka connect REST API to create the connector:
+
+{
+    "name": "telegram-sink-connector",
+    "config": {
+        "connector.class": "com.github.fbascheper.kafka.connect.telegram.TelegramSinkConnector",
+        "key.converter":"org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "io.confluent.connect.avro.AvroConverter",
+        "value.converter.schema.registry.url": "http://localhost:8081",
+        "topics": "smuggling-alerts-telegram",
+        "telegram.bot.name": "<BOT_NAME>",
+		"telegram.bot.username": "<BOT_USER_NAME>",
+		"telegram.bot.api.key": "<BOT_API_KEY>",
+		"telegram.bot.destination.chat.id": <CHAT_ID>
+    }
+}
+
+
 ### Elasticsearch sink connector
 
 As we mentioned before the incoming image events of vessels that are not recognized as potential smugglers will be sent to an Elasticsearch cluster.
+
+Unfortunately version 7 of Elasticsearch is not compatible with the Confluent 5.0.0 platform so we need to install Elastic 6.x. We recommend to run Elasticsearch
+and Kibana using docker. See following the docker run command to start up both components:
+
+```
+docker run -d -p 9200:9200 -p 5601:5601 nshou/elasticsearch-kibana:6.5.4
+```
+
+When you have Elasticsearch up and running you have to create the index where we will be sending the events. Send the following request to the
+Elasticsearch API to create that index:
+
+```
+curl -XPUT 'localhost:9200/image-events-elasticsearch?pretty' -H 'Content-Type: application/json' -d'
+{
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 1, 
+            "number_of_replicas" : 1 
+        }
+    },
+   "mappings": {
+    "image-events-elasticsearch": { 
+      "properties": { 
+        "locationname":    { "type": "keyword", "analyzer": "simple"  }, 
+        "predictionlabel":     { "type": "keyword", "analyzer": "simple"  }, 
+        "probability":      { "type": "float" },  
+        "latitudelongitude":      { "type": "geo_point" },  
+        "timestamp":  { "type":   "date"}
+      }
+    }
+  }
+}'
+```
+
+And finally you have to create the Elasticsearch sink connector. To do so send the following request to the Kafka connect REST API:
+
+```
+{
+    "name": "elasticsearch-sink-connector",
+    "config": {
+        "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+        "topics": "image-events-elasticsearch",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "key.ignore": true,
+    "type.name": "image-events-elasticsearch",
+    "connection.url": "http://localhost:9200"	
+    }
+}
+```
+
+
+
 
