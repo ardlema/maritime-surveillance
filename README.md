@@ -16,6 +16,13 @@ application will be listening to the upcoming images and will apply an image rec
 If the boat is identified as a speedboat (potential smuggling activity) an alert will be sent to the Telegram application through a pre-configured Telegram sink connector. If the boat is not identified
 as a speedboat the event will be sent to an Elasticsearch cluster and the statistics of events received will be shown through a Kibana dashboard.
 
+The Kafka Streams topology implemented looks as the following:
+
+![Topology](docs/topology.JPG)
+
+After getting the events from the source connector (see Connectors set-up section) we filter the events that do not contain a valid image. Then the next processor
+will recognize the image and depending on its content (potential smuggling or not) it will send the event to either the ElasticSearch branch or the Telegram one. 
+
 # Requirements, Installation and Usage
 
 Java 8 and Maven 3 are required. Maven will download all required dependencies.
