@@ -18,15 +18,15 @@ object SmugglingDetector {
     val streamsConfiguration = KafkaStreamsConfig.buildStreamsConfiguration(
       "tensorflow-smuggling-detector", " /tmp",
       KafkaConfig.KafkaBootstrapServers,
-      KafkaConfig.KafkaSchemaRegistryUrl);
+      KafkaConfig.KafkaSchemaRegistryUrl)
 
     val streams = SmugglingDetectorStreamsBuilder.createStreams(streamsConfiguration)
 
-    streams.cleanUp();
-    streams.start();
+    streams.cleanUp()
+    streams.start()
 
-    println("Smuggling detector stream microservice is running...");
-    println("Getting events from the input Kafka Topic: " + ImageInputTopic + ". Sending alerts to the following Kafka Topic: " + AlertsOutputTopic);
+    println("Smuggling detector stream microservice is running...")
+    println("Getting events from the input Kafka Topic: " + ImageInputTopic + ". Sending alerts to the following Kafka Topic: " + AlertsOutputTopic)
 
     // Add shutdown hook to respond to SIGTERM and gracefully close Kafka Streams
     sys.addShutdownHook {
